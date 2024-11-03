@@ -3,17 +3,28 @@ import requests
 
 app = Flask(__name__)
 
-@app.route('/circulating_supply', methods=['GET'])
-def circulating_supply():
-    total_supply = 10_000_000_000
-    burned_amount = 301_298_369.4770529
-    circulating_supply_value = total_supply - burned_amount
-    return jsonify({"circulating_supply": circulating_supply_value})
+API_KEY = "YOUR_ETHERSCAN_API_KEY"
+CONTRACT_ADDRESS = "0x7AfD0d633e0A2b1db97506d97CAdc880C894EcA9"
+BURN_ADDRESS = "0x000000000000000000000000000000000000dead"
 
-@app.route('/total_supply', methods=['GET'])
-def total_supply():
-    total_supply_value = 10_000_000_000  # Replace this with your actual total supply if it changes dynamically
-    return jsonify({"total_supply": total_supply_value})
+@app.route('/circulating_supply')
+def circulating_supply():
+    total_supply = get_total_supply()
+    burned_amount = get_balance(BURN_ADDRESS)
+    circulating_supply = total_supply - burned_amount
+    return jsonify({"circulating_supply": circulating_supply})
+
+def get_total_supply():
+    url = f"https://api.etherscan.io/api?module=stats&action=tokensupply&contractaddress={CONTRACT_ADDRESS}&apikey={API_KEY}"
+    response = requests.get(url)
+    data = response.json()
+    return int(data["result"])
+
+def get_balance(address):
+    url = f"https://api.etherscan.io/api?module=account&action=tokenbalance&contractaddress={CONTRACT_ADDRESS}&address={address}&tag=latest&apikey={API_KEY}"
+    response = requests.get(url)
+    data = response.json()
+    return int(data["result"])
 
 if __name__ == '__main__':
     app.run()
